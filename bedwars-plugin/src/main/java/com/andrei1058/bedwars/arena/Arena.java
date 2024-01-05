@@ -73,6 +73,8 @@ import com.andrei1058.bedwars.support.citizens.JoinNPC;
 import com.andrei1058.bedwars.support.paper.TeleportManager;
 import com.andrei1058.bedwars.support.papi.SupportPAPI;
 import com.andrei1058.bedwars.support.vault.WithEconomy;
+import me.twintailedfoxxx.bedwarsevents.objects.BedwarsEvent;
+import me.twintailedfoxxx.bedwarsevents.objects.base.SetItemEvent;
 import net.md_5.bungee.api.chat.ClickEvent;
 import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.*;
@@ -117,6 +119,7 @@ public class Arena implements IArena {
     private List<Player> players = new ArrayList<>();
     private List<Player> spectators = new ArrayList<>();
     private List<Block> signs = new ArrayList<>();
+    private List<BedwarsEvent> events = new ArrayList<>();
     private GameState status = GameState.restarting;
     private YamlConfiguration yml;
     private ArenaConfig cm;
@@ -177,7 +180,7 @@ public class Arena implements IArena {
     private Instant startTime;
     private ITeamAssigner teamAssigner = new TeamAssigner();
 
-    private boolean allowMapBreak = false;
+    private boolean allowMapBreak = true;
     private @Nullable ITeam winner;
 
     /**
@@ -235,7 +238,6 @@ public class Arena implements IArena {
                 group = yml.getString("group");
             }
         }
-
 
         if (!BedWars.getAPI().getRestoreAdapter().isWorld(name)) {
             if (p != null) p.sendMessage(ChatColor.RED + "There isn't any map called " + name);
@@ -337,6 +339,9 @@ public class Arena implements IArena {
                 }
             }
         }
+
+        //Load events
+        events.addAll(plugin.eventConfiguration.getEvents());
 
         arenas.add(this);
         arenaByName.put(getArenaName(), this);
@@ -2702,5 +2707,9 @@ public class Arena implements IArena {
     @Override
     public GameStatsHolder getStatsHolder() {
         return gameStats;
+    }
+
+    public List<BedwarsEvent> getEvents() {
+        return events;
     }
 }

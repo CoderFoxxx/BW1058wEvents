@@ -31,14 +31,14 @@ import com.andrei1058.bedwars.api.language.Language;
 import com.andrei1058.bedwars.api.language.Messages;
 import com.andrei1058.bedwars.api.tasks.PlayingTask;
 import com.andrei1058.bedwars.arena.Arena;
-import org.bukkit.Bukkit;
-import org.bukkit.Location;
-import org.bukkit.Material;
+import me.twintailedfoxxx.bedwarsevents.objects.BedwarsEvent;
+import org.bukkit.*;
 import org.bukkit.entity.Player;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitTask;
 
 import java.util.Map;
+import java.util.Random;
 
 import static com.andrei1058.bedwars.BedWars.nms;
 import static com.andrei1058.bedwars.api.language.Language.getMsg;
@@ -47,13 +47,14 @@ public class GamePlayingTask implements Runnable, PlayingTask {
 
     private Arena arena;
     private BukkitTask task;
-    private int beds_destroy_countdown, dragon_spawn_countdown, game_end_countdown;
+    private int beds_destroy_countdown, dragon_spawn_countdown, game_end_countdown, eventCountdown;
 
     public GamePlayingTask(Arena arena) {
         this.arena = arena;
         this.beds_destroy_countdown = BedWars.config.getInt(ConfigPath.GENERAL_CONFIGURATION_BEDS_DESTROY_COUNTDOWN);
         this.dragon_spawn_countdown = BedWars.config.getInt(ConfigPath.GENERAL_CONFIGURATION_DRAGON_SPAWN_COUNTDOWN);
         this.game_end_countdown = BedWars.config.getInt(ConfigPath.GENERAL_CONFIGURATION_GAME_END_COUNTDOWN);
+        this.eventCountdown = BedWars.plugin.eventConfiguration.getEventDelay();
         this.task = Bukkit.getScheduler().runTaskTimer(BedWars.plugin, this, 0, 20L);
     }
 
@@ -83,6 +84,11 @@ public class GamePlayingTask implements Runnable, PlayingTask {
 
     public int getGameEndCountdown() {
         return game_end_countdown;
+    }
+
+    @Override
+    public int getEventCountdown() {
+        return eventCountdown;
     }
 
     @Override
@@ -252,6 +258,39 @@ public class GamePlayingTask implements Runnable, PlayingTask {
         for (IGenerator o : getArena().getOreGenerators()) {
             o.spawn();
         }
+
+        /* EVENTS */
+        eventCountdown--;
+        if(eventCountdown == 3 || eventCountdown == 2 || eventCountdown == 1) {
+            for(Player player : getArena().getPlayers()) {
+                player.playSound(player.getLocation(), Sound.CLICK, 1, 1);
+                player.sendMessage(ChatColor.translateAlternateColorCodes('&',
+                        "&6&lНовое событие произойдет через &e&l" + eventCountdown + " &6&lсек!"));
+            }
+        }
+        if(eventCountdown == 0) {
+            double randomNum = new Random().nextDouble();
+            double cumulativeChance = 0.0d;
+            BedwarsEvent selected = null;
+            for(BedwarsEvent event : getArena().getEvents()) {
+                cumulativeChance += event.getChance();
+                if(randomNum <= cumulativeChance) {
+                    selected = event;
+                }
+            }
+
+            if(selected == null) {
+                selected = getArena().getEvents().get(getArena().getEvents().size() - 1);
+            }
+
+            for(Player player : getArena().getPlayers()) {
+                nms.sendTitle(player, "&6Новое событие!", selected.getDisplayName(), 10, 40, 10);
+            }
+
+            selected.act(getArena());
+            eventCountdown = BedWars.plugin.eventConfiguration.getEventDelay();
+        }
+
     }
 
     public void cancel() {

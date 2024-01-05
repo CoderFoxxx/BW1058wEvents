@@ -81,6 +81,7 @@ import com.andrei1058.bedwars.support.vipfeatures.VipFeatures;
 import com.andrei1058.bedwars.support.vipfeatures.VipListeners;
 import com.andrei1058.vipfeatures.api.IVipFeatures;
 import com.andrei1058.vipfeatures.api.MiniGameAlreadyRegistered;
+import me.twintailedfoxxx.bedwarsevents.objects.EventsConfiguration;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -134,6 +135,8 @@ public class BedWars extends JavaPlugin {
     private boolean serverSoftwareSupport = true;
 
     private static com.andrei1058.bedwars.api.BedWars api;
+
+    public EventsConfiguration eventConfiguration;
 
     @Override
     public void onLoad() {
@@ -201,6 +204,7 @@ public class BedWars extends JavaPlugin {
         new Turkish();
 
         config = new MainConfig(this, "config");
+        eventConfiguration = new EventsConfiguration();
 
         generators = new GeneratorsConfig(this, "generators", this.getDataFolder().getPath());
         // Initialize signs config after the main config
