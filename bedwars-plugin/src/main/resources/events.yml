@@ -1,0 +1,50 @@
+Events:
+  Delay: 300
+  RemoveSwords:
+    DisplayName: 'Удаление мечей с инвентаря'
+    Type: SET_ITEM
+    NewItem:
+      Material: AIR
+      Slot: 1
+    Chance: 0.3
+  GiveKnockbackStick:
+    DisplayName: 'Палка-кидалка!'
+    Type: SET_ITEM
+    NewItem:
+      Material: STICK
+      Slot: 5
+      Meta:
+        DisplayName: "&cПалка!"
+        Enchantments:
+          - KNOCKBACK:2
+          - DAMAGE_ALL:3
+        Lore:
+          - "Lore lines"
+          - "Yeah"
+    Chance: 0.4
+  RemovePlacedBlocks:
+    DisplayName: 'Долой все ваши блоки!'
+    Type: CHANGE_PLACED_BLOCKS
+    NewBlockMaterial: AIR
+    Chance: 0.2
+  Lava:
+    DisplayName: 'Мост - это лава!'
+    Type: CHANGE_PLACED_BLOCKS
+    NewBlockMaterial: LAVA
+    Chance: 0.1
+  GlowEffect:
+    DisplayName: 'Всем начать светиться!'
+    Type: ADD_POTION_EFFECT
+    PotionEffect:
+      Type: GLOW
+      Duration: 60
+      Amplifier: 1
+    Chance: 0.4
+  Blindness:
+    DisplayName: 'Кто выключил свет?'
+    Type: ADD_POTION_EFFECT
+    PotionEffect:
+      Type: BLINDNESS
+      Duration: 120
+      Amplifier: 2
+    Chance: 0.35

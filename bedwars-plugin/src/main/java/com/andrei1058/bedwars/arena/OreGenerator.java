@@ -219,7 +219,18 @@ public class OreGenerator implements IGenerator {
      */
     @Override
     public void dropItem(Location location) {
-        dropItem(location, amount);
+        Arena a = (Arena)arena;
+        if(type == GeneratorType.EMERALD) {
+            dropItem(location, a.getEmeraldsDroppedMultiplier() * amount);
+        } else {
+            if(type == GeneratorType.IRON || type == GeneratorType.GOLD) {
+                if(a.isTeamGeneratorEnabled()) {
+                    dropItem(location, amount);
+                }
+            } else {
+                dropItem(location, amount);
+            }
+        }
     }
 
     @Override

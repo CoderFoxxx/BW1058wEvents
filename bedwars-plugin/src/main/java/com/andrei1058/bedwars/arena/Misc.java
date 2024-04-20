@@ -67,11 +67,15 @@ import static com.andrei1058.bedwars.api.language.Language.getMsg;
 public class Misc {
 
     public static void moveToLobbyOrKick(Player p, @Nullable IArena arena, boolean notAbandon) {
+        p.setMaxHealth(20);
+        p.setHealthScale(20);
+        p.setHealth(20);
+
         if (getServerType() != ServerType.BUNGEE) {
             if (!p.getWorld().getName().equalsIgnoreCase(config.getLobbyWorldName())) {
-                Location loc = config.getConfigLoc("lobbyLoc");
-                if (loc != null){ // Can happen when location is not set in config
-                    try{
+                Location loc = null;
+                if (loc != null) { // Can happen when location is not set in config
+                    try {
                         p.teleport(loc);
                     } catch (Exception ignored){
                         Bukkit.getLogger().severe("Could not teleport player to lobby! Try setting the lobby again with /bw setLobby");

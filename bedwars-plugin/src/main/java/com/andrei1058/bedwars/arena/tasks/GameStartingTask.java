@@ -105,6 +105,8 @@ public class GameStartingTask implements Runnable, StartingTask {
             //Disable generators for empty teams if required
             for (ITeam team : getArena().getTeams()) {
                 nms.colorBed(team);
+                //Spawn shopkeepers
+                team.spawnNPCs();
                 if (team.getMembers().isEmpty()) {
                     team.setBedDestroyed(true);
                     if (getArena().getConfig().getBoolean(ConfigPath.ARENA_DISABLE_GENERATOR_FOR_EMPTY_TEAMS)) {
@@ -138,11 +140,6 @@ public class GameStartingTask implements Runnable, StartingTask {
                 getArena().setNextEvent(NextEvent.DIAMOND_GENERATOR_TIER_II);
             } else {
                 getArena().setNextEvent(NextEvent.EMERALD_GENERATOR_TIER_II);
-            }
-
-            //Spawn shopkeepers
-            for (ITeam bwt : getArena().getTeams()) {
-                bwt.spawnNPCs();
             }
             return;
         }

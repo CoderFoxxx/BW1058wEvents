@@ -75,7 +75,6 @@ public class ShopIndex {
      * @param player        target player
      */
     public void open(Player player, PlayerQuickBuyCache quickBuyCache, boolean callEvent) {
-
         if (quickBuyCache == null) return;
 
         if (callEvent) {

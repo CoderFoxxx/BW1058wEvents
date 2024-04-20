@@ -144,7 +144,7 @@ public class ChatFormatting implements Listener {
                     .replace("{TeamName}", team.getDisplayName(Language.getPlayerLanguage(player)).toUpperCase());
             content = content.replace("{team}", teamFormat);
         }
-        return SupportPAPI.getSupportPAPI().replace(player, content).replace("{message}", "%2$s");
+        return ChatColor.translateAlternateColorCodes('&', SupportPAPI.getSupportPAPI().replace(player, content)).replace("{message}", "%2$s");
     }
 
     private static boolean isShouting(String msg, Language lang) {

@@ -57,6 +57,9 @@ public class Reload extends SubCommand {
             l.reload();
             s.sendMessage("§6 ▪ §7"+l.getLangName()+" reloaded!");
         }
+
+        com.andrei1058.bedwars.BedWars.plugin.eventConfiguration.load();
+        s.sendMessage("§6 ▪ §7Events reloaded!");
         return true;
     }
 

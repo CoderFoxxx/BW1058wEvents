@@ -180,11 +180,11 @@ public class Inventory implements Listener {
 
         if (!i.hasItemMeta()) return;
         if (!i.getItemMeta().hasDisplayName()) return;
-        if (BedWars.getServerType() == ServerType.MULTIARENA) {
+        /*if (BedWars.getServerType() == ServerType.MULTIARENA) {
             if (e.getWhoClicked().getLocation().getWorld().getName().equalsIgnoreCase(BedWars.getLobbyWorld())) {
                 e.setCancelled(true);
             }
-        }
+        }*/
 
         /* Check setup gui items */
         if (SetupSession.isInSetupSession(p.getUniqueId()) && nms.getInventoryName(e).equalsIgnoreCase(SetupSession.getInvName())) {

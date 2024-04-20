@@ -37,10 +37,10 @@ import org.bukkit.entity.Player;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitTask;
 
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
 
 import static com.andrei1058.bedwars.BedWars.nms;
+import static com.andrei1058.bedwars.BedWars.plugin;
 import static com.andrei1058.bedwars.api.language.Language.getMsg;
 
 public class GamePlayingTask implements Runnable, PlayingTask {
@@ -260,42 +260,90 @@ public class GamePlayingTask implements Runnable, PlayingTask {
         }
 
         /* EVENTS */
-        eventCountdown--;
-        if(eventCountdown == 3 || eventCountdown == 2 || eventCountdown == 1) {
-            for(Player player : getArena().getPlayers()) {
-                player.playSound(player.getLocation(), Sound.CLICK, 1, 1);
-                player.sendMessage(ChatColor.translateAlternateColorCodes('&',
-                        "&6&lНовое событие произойдет через &e&l" + eventCountdown + " &6&lсек!"));
-            }
-        }
-        if(eventCountdown == 0) {
-            double randomNum = new Random().nextDouble();
-            double cumulativeChance = 0.0d;
-            BedwarsEvent selected = null;
-            for(BedwarsEvent event : getArena().getEvents()) {
-                cumulativeChance += event.getChance();
-                if(randomNum <= cumulativeChance) {
-                    selected = event;
+        if(getArena().getPlayers() != null && !getArena().getPlayers().isEmpty()) {
+            if(!getArena().getEvents().isEmpty()) {
+                eventCountdown--;
+                if(eventCountdown == 3 || eventCountdown == 2 || eventCountdown == 1) {
+                    for(Player player : getArena().getPlayers()) {
+                        player.sendMessage(plugin.eventConfiguration.getMessage("NewEventIn").replace("{time}",
+                                String.valueOf(eventCountdown)));
+                    }
+                }
+                if(eventCountdown == 0) {
+                    BedwarsEvent selected;
+                    int rand = new SplittableRandom().nextInt(0, getArena().getEventWeights().size());
+                    int k = getArena().getEventWeights().get(rand);
+                    selected = getArena().getEvents().get(k);
+
+                    if(selected == null) {
+                        selected = getArena().getEvents().get(getArena().getEvents().size() - 1);
+                    }
+
+                    for(Player player : getArena().getPlayers()) {
+                        nms.sendTitle(player, plugin.eventConfiguration.getMessage("NewEventTitle"),
+                                plugin.eventConfiguration.getMessage("NewEventSubtitle").replace("{eventName}",
+                                        selected.getDisplayName()), 10, 40, 10);
+                        announceEvent(selected, player);
+                    }
+
+                    for(Player spec : getArena().getSpectators()) {
+                        announceEvent(selected, spec);
+                    }
+
+                    if(selected.actingIndividually()) {
+                        for(Player player : getArena().getPlayers()) {
+                            selected.act(player, getArena());
+                        }
+                    } else {
+                        selected.act(null, getArena());
+                    }
+
+                    getArena().getRunningEvents().add(selected);
+                    eventCountdown = BedWars.plugin.eventConfiguration.getEventDelay();
+                    getArena().getEvents().remove(selected);
+                    getArena().updateEventWeights();
+                    if(selected.getDuration() != 0) {
+                        BedwarsEvent finalSelected = selected;
+                        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+                            if(finalSelected.actingIndividually()) {
+                                for(Player player : getArena().getPlayers()) {
+                                    finalSelected.undo(player, getArena());
+                                }
+                            } else {
+                                finalSelected.undo(null, getArena());
+                            }
+                            if(getArena().getPlayers() != null && !getArena().getPlayers().isEmpty()) {
+                                for(Player player : getArena().getPlayers()) {
+                                    player.sendMessage(plugin.eventConfiguration.getMessage("EventIsOver")
+                                            .replace("{eventName}", finalSelected.getDisplayName()));
+                                }
+                            }
+
+                            getArena().getRunningEvents().remove(finalSelected);
+                        }, 20L * selected.getDuration());
+                    }
                 }
             }
-
-            if(selected == null) {
-                selected = getArena().getEvents().get(getArena().getEvents().size() - 1);
-            }
-
-            for(Player player : getArena().getPlayers()) {
-                nms.sendTitle(player, "&6Новое событие!", selected.getDisplayName(), 10, 40, 10);
-            }
-
-            selected.act(getArena());
-            eventCountdown = BedWars.plugin.eventConfiguration.getEventDelay();
         }
-
     }
 
     public void cancel() {
         task.cancel();
     }
+
+    private void announceEvent(BedwarsEvent event, Player player) {
+        StringBuilder builder = new StringBuilder();
+        builder.append("\n&6&m-----------------------------------------------------\n");
+        builder.append((getArena().getEvents().size() > 1) ? "&e&lНовое событие&f: " : "&e&lПОСЛЕДНЕЕ СОБЫТИЕ: ");
+        builder.append("&f&l\"").append(event.getDisplayName()).append("&f&l\"");
+        if(event.getDuration() > 0) {
+            builder.append(" &7(").append(event.getDuration()).append(" сек.)");
+        }
+        builder.append("&f.\n&7&o").append(event.getDescription());
+        builder.append("\n&6&m-----------------------------------------------------\n");
+        if(getArena().getEvents().size() <= 1) {
+            builder.append("\n\n&6&lПоздравляем, вам удалось выжить все события! &7Дальше идет обыкновенная игра. &aУдачи в бою!");
+        }
+        player.sendMessage(ChatColor.translateAlternateColorCodes('&', builder.toString()));
+    }
 }
-
-

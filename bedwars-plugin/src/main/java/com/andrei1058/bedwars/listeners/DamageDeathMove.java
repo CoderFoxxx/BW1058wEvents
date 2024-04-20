@@ -41,18 +41,23 @@ import com.andrei1058.bedwars.arena.team.BedWarsTeam;
 import com.andrei1058.bedwars.configuration.Sounds;
 import com.andrei1058.bedwars.listeners.dropshandler.PlayerDrops;
 import com.andrei1058.bedwars.support.paper.TeleportManager;
+import me.twintailedfoxxx.bedwarsevents.objects.enums.EventType;
+import me.twintailedfoxxx.bedwarsevents.objects.impl.InvisibilityEvent;
+import me.twintailedfoxxx.bedwarsevents.objects.impl.VelocityManipulationEvent;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
+import org.bukkit.Material;
+import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
 import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.*;
-import org.bukkit.event.player.PlayerItemConsumeEvent;
-import org.bukkit.event.player.PlayerMoveEvent;
-import org.bukkit.event.player.PlayerRespawnEvent;
-import org.bukkit.event.player.PlayerTeleportEvent;
+import org.bukkit.event.player.*;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.projectiles.ProjectileSource;
 import org.bukkit.util.Vector;
@@ -89,6 +94,15 @@ public class DamageDeathMove implements Listener {
             Player p = (Player) e.getEntity();
             IArena a = Arena.getArenaByPlayer(p);
             if (a != null) {
+                if(((Arena)a).eventRunning(EventType.VELOCITY_MANIPULATION)) {
+                    if(e.getCause() == EntityDamageEvent.DamageCause.FALL) {
+                        p.setVelocity(new Vector(p.getVelocity().getX(), 0, p.getVelocity().getZ()));
+                        p.setAllowFlight(false);
+                        p.setFlying(false);
+                        e.setCancelled(true);
+                        return;
+                    }
+                }
                 if (a.isSpectator(p)) {
                     e.setCancelled(true);
                     return;
@@ -116,6 +130,13 @@ public class DamageDeathMove implements Listener {
                 //}
 
             }
+        }
+        if(e.getEntity().getWorld().hasStorm() && e.getEntity().getType() != EntityType.PLAYER && e.getCause() == EntityDamageEvent.DamageCause.FALL) {
+            e.setCancelled(true);
+        }
+        if(e.getEntity().getType() != EntityType.PLAYER &&
+                (e.getCause() == EntityDamageEvent.DamageCause.FIRE_TICK || e.getCause() == EntityDamageEvent.DamageCause.FIRE)) {
+            e.setCancelled(true);
         }
         if (BedWars.getServerType() == ServerType.MULTIARENA) {
             if (e.getEntity().getLocation().getWorld().getName().equalsIgnoreCase(BedWars.getLobbyWorld())) {
@@ -319,6 +340,15 @@ public class DamageDeathMove implements Listener {
         }*/
         if (BedWars.getServerType() == ServerType.MULTIARENA) {
             if (e.getEntity().getLocation().getWorld().getName().equalsIgnoreCase(BedWars.getLobbyWorld())) {
+                e.setCancelled(true);
+            }
+        }
+        if(e.getEntity() instanceof Wolf && e.getDamager() instanceof Player) {
+            Player damager = (Player) e.getDamager();
+            Arena arena = (Arena)Arena.getArenaByPlayer(damager);
+            Wolf wolf = (Wolf) e.getEntity();
+
+            if(arena != null && wolf.isTamed() && wolf.getCollarColor() == arena.getTeam(damager).getColor().dye()) {
                 e.setCancelled(true);
             }
         }
@@ -654,6 +684,48 @@ public class DamageDeathMove implements Listener {
                     }
                 }
             }
+            Arena arena = (Arena)a;
+            if(arena.eventRunning(EventType.VELOCITY_MANIPULATION)) {
+                arena.getRunningEvents().stream().filter(x -> x.getType() == EventType.VELOCITY_MANIPULATION).forEach(x -> {
+                    VelocityManipulationEvent event = (VelocityManipulationEvent) x;
+                    if(//e.getTo().getX() < event.getConditionalVector().getX() ||
+                            e.getPlayer().getVelocity().getY() < 0 && e.getTo().getY() < event.getConditionalVector().getY()
+                                    && !e.getPlayer().getAllowFlight()
+                        /*e.getTo().getZ() < event.getConditionalVector().getZ()*/) {
+                        e.getPlayer().setAllowFlight(true);
+                        e.getPlayer().setVelocity(event.getVector());
+                    }
+                });
+                if(e.getPlayer().getAllowFlight() && e.getPlayer().getFallDistance() > 0) {
+                    e.getPlayer().setAllowFlight(false);
+                }
+            }
+
+            if(arena.eventRunning(EventType.SCAFFOLD)) {
+                Player player = e.getPlayer();
+                ItemStack itemInHand = e.getPlayer().getItemInHand();
+                Block block = e.getTo().clone().add(player.getVelocity()).getBlock();
+                Block down = e.getPlayer().getLocation().clone().add(player.getVelocity()).getBlock()
+                        .getRelative(BlockFace.DOWN);
+                if(itemInHand.getType().isBlock()) {
+                    if(block.getType() == Material.AIR) {
+                        if(player.getFallDistance() <= 0) {
+                            if(arena.getRegionsList().stream().noneMatch(x -> x.isInRegion(block.getLocation()))) {
+                                Block finalBlock;
+                                if(player.getVelocity().getY() > 0) {
+                                    down.setType(itemInHand.getType());
+                                    finalBlock = down;
+                                } else {
+                                    block.setType(itemInHand.getType());
+                                    finalBlock = block;
+                                }
+                                arena.getPlaced().add(new Vector(finalBlock.getX(), finalBlock.getY(), finalBlock.getZ()));
+                                player.getItemInHand().setAmount(player.getItemInHand().getAmount() - 1);
+                            }
+                        }
+                    }
+                }
+            }
         } else {
             if (config.getBoolean(ConfigPath.LOBBY_VOID_TELEPORT_ENABLED) && e.getPlayer().getWorld().getName().equalsIgnoreCase(config.getLobbyWorldName()) && BedWars.getServerType() == ServerType.MULTIARENA) {
                 if (e.getTo().getY() < config.getInt(ConfigPath.LOBBY_VOID_TELEPORT_HEIGHT)) {
@@ -683,6 +755,17 @@ public class DamageDeathMove implements Listener {
     }
 
     @EventHandler
+    public void onSneak(PlayerToggleSneakEvent event) {
+        Arena arena = (Arena)Arena.getArenaByPlayer(event.getPlayer());
+        if(arena != null) {
+            if(arena.eventRunning(EventType.INVISIBILITY)) {
+                PotionEffect effect = new PotionEffect(PotionEffectType.INVISIBILITY, 9999, 1);
+                InvisibilityEvent.toggleInvisibility(arena, event.getPlayer(), effect, event.isSneaking());
+            }
+        }
+    }
+
+    @EventHandler
     public void onItemFrameDamage(EntityDamageByEntityEvent e) {
         if (e.getEntity().getType() == EntityType.ITEM_FRAME) {
             IArena a = Arena.getArenaByIdentifier(e.getEntity().getWorld().getName());
@@ -700,7 +783,7 @@ public class DamageDeathMove implements Listener {
     @EventHandler
     public void onEntityDeath(EntityDeathEvent e) {
         if (Arena.getArenaByIdentifier(e.getEntity().getLocation().getWorld().getName()) != null) {
-            if (e.getEntityType() == EntityType.IRON_GOLEM || e.getEntityType() == EntityType.SILVERFISH) {
+            if (e.getEntityType() == EntityType.IRON_GOLEM || e.getEntityType() == EntityType.SILVERFISH || e.getEntity().getWorld().hasStorm()) {
                 e.getDrops().clear();
                 e.setDroppedExp(0);
             }

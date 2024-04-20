@@ -1,8 +1,8 @@
 name: BedWars1058
 api-version: '1.13'
 version: ${project.version}
-author: andrei1058 (Event system by TwinTailedFoxxx)
-description: BedWars minigame by andrei1058
+author: andrei1058 (modified by TwinTailedFoxxx)
+description: BedWars minigame by andrei1058 with custom events
 main: com.andrei1058.bedwars.BedWars
 softdepend: [Vault,PlaceholderAPI,Citizens,Parties,SlimeWorldManager,VipFeatures,Enhanced-SlimeWorldManager,PartyAndFriends,Spigot-Party-API-PAF]
 #load: STARTUP

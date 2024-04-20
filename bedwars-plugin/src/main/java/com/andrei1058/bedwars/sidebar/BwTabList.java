@@ -28,11 +28,13 @@ import com.andrei1058.bedwars.api.configuration.ConfigPath;
 import com.andrei1058.bedwars.api.language.Language;
 import com.andrei1058.bedwars.api.language.Messages;
 import com.andrei1058.bedwars.api.server.ServerType;
+import com.andrei1058.bedwars.support.papi.SupportPAPI;
 import com.andrei1058.spigot.sidebar.PlayerTab;
 import com.andrei1058.spigot.sidebar.Sidebar;
 import com.andrei1058.spigot.sidebar.SidebarLine;
 import com.andrei1058.spigot.sidebar.SidebarLineAnimated;
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.potion.PotionEffectType;
@@ -378,7 +380,8 @@ public class BwTabList {
                 }
             }
 
-            strings.add(parsed);
+            strings.add(ChatColor.translateAlternateColorCodes('&',
+                    SupportPAPI.getSupportPAPI().replace(targetPlayer, parsed)));
         }
 
         if (strings.size() == 1) {

@@ -348,7 +348,7 @@ public class BedWarsTeam implements ITeam {
         nms.setCollide(p, arena, true);
         p.setAllowFlight(false);
         p.setFlying(false);
-        p.setHealth(20);
+        p.setHealth(p.getMaxHealth());
 
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
             getArena().getRespawnSessions().remove(p); //Fixes https://github.com/andrei1058/BedWars1058/issues/669
@@ -370,7 +370,7 @@ public class BedWarsTeam implements ITeam {
         if (sc != null) {
             sc.managePermanentsAndDowngradables(getArena());
         }
-        p.setHealth(20);
+        p.setHealth(p.getMaxHealth());
         if (!getBaseEffects().isEmpty()) {
             for (PotionEffect ef : getBaseEffects()) {
                 p.addPotionEffect(ef, true);

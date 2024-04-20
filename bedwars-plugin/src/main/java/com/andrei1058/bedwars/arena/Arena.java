@@ -74,7 +74,8 @@ import com.andrei1058.bedwars.support.paper.TeleportManager;
 import com.andrei1058.bedwars.support.papi.SupportPAPI;
 import com.andrei1058.bedwars.support.vault.WithEconomy;
 import me.twintailedfoxxx.bedwarsevents.objects.BedwarsEvent;
-import me.twintailedfoxxx.bedwarsevents.objects.base.SetItemEvent;
+import me.twintailedfoxxx.bedwarsevents.objects.enums.EventType;
+import me.twintailedfoxxx.bedwarsevents.objects.impl.ChangePlayerAttributesEvent;
 import net.md_5.bungee.api.chat.ClickEvent;
 import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.*;
@@ -120,6 +121,7 @@ public class Arena implements IArena {
     private List<Player> spectators = new ArrayList<>();
     private List<Block> signs = new ArrayList<>();
     private List<BedwarsEvent> events = new ArrayList<>();
+    private List<Integer> eventWeights = new ArrayList<>();
     private GameState status = GameState.restarting;
     private YamlConfiguration yml;
     private ArenaConfig cm;
@@ -141,6 +143,9 @@ public class Arena implements IArena {
      */
     private NextEvent nextEvent = NextEvent.DIAMOND_GENERATOR_TIER_II;
     private int diamondTier = 1, emeraldTier = 1;
+    private int soldItemsMultiplier = 1, emeraldsDroppedMultiplier = 1;
+    private double villagerCostMultiplier = 1;
+    private boolean teamGeneratorEnabled = true;
 
     /**
      * Players in respawn session
@@ -181,7 +186,10 @@ public class Arena implements IArena {
     private ITeamAssigner teamAssigner = new TeamAssigner();
 
     private boolean allowMapBreak = true;
+    private List<BedwarsEvent> eventsRunning = new ArrayList<>();
     private @Nullable ITeam winner;
+
+    private boolean allowUseShopNpcs = true;
 
     /**
      * Load an arena.
@@ -341,7 +349,10 @@ public class Arena implements IArena {
         }
 
         //Load events
-        events.addAll(plugin.eventConfiguration.getEvents());
+        events.addAll(plugin.getLoadedEvents());
+
+        // Load event weights
+        updateEventWeights();
 
         arenas.add(this);
         arenaByName.put(getArenaName(), this);
@@ -750,6 +761,10 @@ public class Arena implements IArena {
      * @param disconnect True if the player was disconnected
      */
     public void removePlayer(@NotNull Player p, boolean disconnect) {
+        p.setMaxHealth(20);
+        p.setHealthScale(20);
+        p.setHealth(20);
+
         if (leaving.contains(p)) {
             return;
         } else {
@@ -905,12 +920,6 @@ public class Arena implements IArena {
         if (getServerType() == ServerType.SHARED) {
             SidebarService.getInstance().remove(p);
             this.sendToMainLobby(p);
-
-        } else if (getServerType() == ServerType.BUNGEE) {
-            Misc.moveToLobbyOrKick(p, this, true);
-            return;
-        } else {
-            this.sendToMainLobby(p);
         }
 
         /* restore player inventory */
@@ -1001,7 +1010,7 @@ public class Arena implements IArena {
 
         // fix #340
         // remove player from party if leaves and the owner is still in the arena while waiting or starting
-        if (status == GameState.waiting || status == GameState.starting) {
+        /*if (status == GameState.waiting || status == GameState.starting) {
             if (BedWars.getParty().hasParty(p) && !BedWars.getParty().isOwner(p)) {
                 for (Player pl : BedWars.getParty().getMembers(p)) {
                     if (BedWars.getParty().isOwner(pl) && pl.getWorld().getName().equalsIgnoreCase(getArenaName())) {
@@ -1010,10 +1019,14 @@ public class Arena implements IArena {
                     }
                 }
             }
-        }
+        }*/
 
         if (lastHit != null) {
             lastHit.remove();
+        }
+
+        if(getServerType() == ServerType.MULTIARENA || getServerType() == ServerType.BUNGEE) {
+            this.sendToMainLobby(p);
         }
     }
 
@@ -1045,9 +1058,6 @@ public class Arena implements IArena {
         if (getServerType() == ServerType.SHARED) {
             SidebarService.getInstance().remove(p);
             this.sendToMainLobby(p);
-        } else if (getServerType() == ServerType.MULTIARENA) {
-            this.sendToMainLobby(p);
-
         }
         for (PotionEffect pf : p.getActivePotionEffects()) {
             p.removePotionEffect(pf.getType());
@@ -1064,8 +1074,8 @@ public class Arena implements IArena {
         } else {
             pg.restore();
         }
-        if (getServerType() == ServerType.BUNGEE) {
-            Misc.moveToLobbyOrKick(p, this, true);
+        if (getServerType() == ServerType.MULTIARENA || getServerType() == ServerType.BUNGEE) {
+            this.sendToMainLobby(p);
             return;
         }
         playerLocation.remove(p);
@@ -1820,9 +1830,11 @@ public class Arena implements IArena {
      */
     @Override
     public ITeam getTeam(Player p) {
-        for (ITeam t : getTeams()) {
-            if (t.isMember(p)) {
-                return t;
+        if(getTeams() != null) {
+            for (ITeam t : getTeams()) {
+                if (t.isMember(p)) {
+                    return t;
+                }
             }
         }
         return null;
@@ -1965,6 +1977,7 @@ public class Arena implements IArena {
                     }
 
                 }
+                events.clear();
                 changeStatus(GameState.restarting);
 
                 //Game end event
@@ -2659,12 +2672,7 @@ public class Arena implements IArena {
                 TeleportManager.teleportC(player, loc, PlayerTeleportEvent.TeleportCause.PLUGIN);
             }
         } else if (BedWars.getServerType() == ServerType.MULTIARENA) {
-            if (BedWars.getLobbyWorld().isEmpty()) {
-                TeleportManager.teleportC(player, Bukkit.getWorlds().get(0).getSpawnLocation(), PlayerTeleportEvent.TeleportCause.PLUGIN);
-                plugin.getLogger().log(Level.SEVERE, player.getName() + " was teleported to the main world because lobby location is not set!");
-            } else {
-                TeleportManager.teleportC(player, config.getConfigLoc("lobbyLoc"), PlayerTeleportEvent.TeleportCause.PLUGIN);
-            }
+            Misc.moveToLobbyOrKick(player, this, false);
         }
     }
 
@@ -2711,5 +2719,69 @@ public class Arena implements IArena {
 
     public List<BedwarsEvent> getEvents() {
         return events;
+    }
+
+    public List<Integer> getEventWeights() {
+        return eventWeights;
+    }
+
+    public List<BedwarsEvent> getRunningEvents() {
+        return eventsRunning;
+    }
+
+    public boolean eventRunning(EventType type) {
+        return eventsRunning.stream().anyMatch(x -> x.getType() == type);
+    }
+
+    public int getSoldItemsMultiplier() {
+        return soldItemsMultiplier;
+    }
+
+    public double getVillagerCostMultiplier() {
+        return villagerCostMultiplier;
+    }
+
+    public int getEmeraldsDroppedMultiplier() {
+        return emeraldsDroppedMultiplier;
+    }
+
+    public void setSoldItemsMultiplier(int soldItemsMultiplier) {
+        this.soldItemsMultiplier = soldItemsMultiplier;
+    }
+
+    public void setVillagerCostMultiplier(double villagerCostMultiplier) {
+        this.villagerCostMultiplier = villagerCostMultiplier;
+    }
+
+    public void setEmeraldsDroppedMultiplier(int emeraldsDroppedMultiplier) {
+        this.emeraldsDroppedMultiplier = emeraldsDroppedMultiplier;
+    }
+
+    public boolean allowUseShopNpcs() {
+        return allowUseShopNpcs;
+    }
+
+    public void setAllowUseShopNpcs(boolean allowUseShopNpcs) {
+        this.allowUseShopNpcs = allowUseShopNpcs;
+    }
+
+    public void updateEventWeights() {
+        if(!eventWeights.isEmpty()) {
+            eventWeights.clear();
+        }
+
+        for(int i = 0; i < events.size(); i++) {
+            for(int j = 0; j < events.get(i).getWeight(); j++) {
+                eventWeights.add(i);
+            }
+        }
+    }
+
+    public boolean isTeamGeneratorEnabled() {
+        return teamGeneratorEnabled;
+    }
+
+    public void setTeamGeneratorEnabled(boolean teamGeneratorEnabled) {
+        this.teamGeneratorEnabled = teamGeneratorEnabled;
     }
 }

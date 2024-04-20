@@ -81,7 +81,10 @@ import com.andrei1058.bedwars.support.vipfeatures.VipFeatures;
 import com.andrei1058.bedwars.support.vipfeatures.VipListeners;
 import com.andrei1058.vipfeatures.api.IVipFeatures;
 import com.andrei1058.vipfeatures.api.MiniGameAlreadyRegistered;
-import me.twintailedfoxxx.bedwarsevents.objects.EventsConfiguration;
+import me.twintailedfoxxx.bedwarsevents.commands.ChangeTimeCommand;
+import me.twintailedfoxxx.bedwarsevents.commands.SpawnEntityCommand;
+import me.twintailedfoxxx.bedwarsevents.objects.BedwarsEvent;
+import me.twintailedfoxxx.bedwarsevents.objects.impl.EventsConfiguration;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -137,6 +140,8 @@ public class BedWars extends JavaPlugin {
     private static com.andrei1058.bedwars.api.BedWars api;
 
     public EventsConfiguration eventConfiguration;
+
+    public List<BedwarsEvent> loadedEvents;
 
     @Override
     public void onLoad() {
@@ -205,6 +210,7 @@ public class BedWars extends JavaPlugin {
 
         config = new MainConfig(this, "config");
         eventConfiguration = new EventsConfiguration();
+        loadedEvents = eventConfiguration.getEvents();
 
         generators = new GeneratorsConfig(this, "generators", this.getDataFolder().getPath());
         // Initialize signs config after the main config
@@ -229,6 +235,8 @@ public class BedWars extends JavaPlugin {
 
         /* Register commands */
         nms.registerCommand(mainCmd, new MainCommand(mainCmd));
+        nms.registerCommand("spawnentity", new SpawnEntityCommand());
+        nms.registerCommand("settime", new ChangeTimeCommand());
 
         // newer versions do not seem to like delayed registration of commands
         if (nms.getVersion() >= 9) {
@@ -709,6 +717,10 @@ public class BedWars extends JavaPlugin {
             }
         }
         level = levelsManager;
+    }
+
+    public List<BedwarsEvent> getLoadedEvents() {
+        return loadedEvents;
     }
 
     public static Economy getEconomy() {

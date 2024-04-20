@@ -34,6 +34,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
 import org.bukkit.block.Sign;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Fireball;
@@ -43,19 +44,24 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.inventory.PrepareItemCraftEvent;
-import org.bukkit.event.player.PlayerArmorStandManipulateEvent;
-import org.bukkit.event.player.PlayerBedEnterEvent;
-import org.bukkit.event.player.PlayerInteractEntityEvent;
-import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.player.*;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.material.Openable;
 import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.util.Vector;
 
+import java.util.Arrays;
+import java.util.List;
+
 import static com.andrei1058.bedwars.BedWars.*;
 import static com.andrei1058.bedwars.api.language.Language.getMsg;
 
 public class Interact implements Listener {
+    private static final List<BlockFace> BLOCK_FACES = Arrays.asList(
+            BlockFace.NORTH_WEST, BlockFace.NORTH, BlockFace.NORTH_EAST,
+            BlockFace.WEST, BlockFace.SELF, BlockFace.EAST,
+            BlockFace.SOUTH_WEST, BlockFace.SOUTH, BlockFace.SOUTH_EAST
+    );
 
     private final double fireballSpeedMultiplier;
     private final double fireballCooldown;
@@ -74,6 +80,15 @@ public class Interact implements Listener {
         Player p = e.getPlayer();
         if (e.getAction() == Action.RIGHT_CLICK_BLOCK || e.getAction() == Action.RIGHT_CLICK_AIR) {
             ItemStack i = BedWars.nms.getItemInHand(p);
+            Arena arena = (Arena) Arena.getArenaByPlayer(p);
+            if(arena != null) {
+                if(nms.getItemInHand(e.getPlayer()).getType() == Material.BLAZE_ROD &&
+                        nms.getItemInHand(e.getPlayer()).getItemMeta().getDisplayName().contains("Спасательная платформа")) {
+                    spawnPlatform(arena, e.getPlayer().getLocation().clone().subtract(0, 3, 0).getBlock());
+                    e.getPlayer().getInventory().remove(e.getItem());
+                }
+            }
+
             if (!nms.isCustomBedWarsItem(i)) return;
             final String[] customData = nms.getCustomData(i).split("_");
             if (customData.length >= 2) {
@@ -93,7 +108,7 @@ public class Interact implements Listener {
         if (e.getAction() != Action.RIGHT_CLICK_BLOCK) return;
         Block b = e.getClickedBlock();
         if (b == null) return;
-        if ((BedWars.getServerType() == ServerType.MULTIARENA && b.getWorld().getName().equals(BedWars.getLobbyWorld()) && !BreakPlace.isBuildSession(e.getPlayer())) || Arena.getArenaByPlayer(e.getPlayer()) != null) {
+        /*if ((BedWars.getServerType() == ServerType.MULTIARENA && b.getWorld().getName().equals(BedWars.getLobbyWorld()) && !BreakPlace.isBuildSession(e.getPlayer())) || Arena.getArenaByPlayer(e.getPlayer()) != null) {
             if (b.getType() == nms.materialCraftingTable() && config.getBoolean(ConfigPath.GENERAL_CONFIGURATION_DISABLE_CRAFTING)) {
                 e.setCancelled(true);
             } else if (b.getType() == nms.materialEnchantingTable() && config.getBoolean(ConfigPath.GENERAL_CONFIGURATION_DISABLE_ENCHANTING)) {
@@ -105,7 +120,7 @@ public class Interact implements Listener {
             } else if (b.getType() == Material.ANVIL && config.getBoolean(ConfigPath.GENERAL_CONFIGURATION_DISABLE_ANVIL)) {
                 e.setCancelled(true);
             }
-        }
+        }*/
     }
 
     @EventHandler
@@ -300,5 +315,12 @@ public class Interact implements Listener {
                 e.getInventory().setResult(new ItemStack(Material.AIR));
             }
         }
+    }
+
+    private void spawnPlatform(Arena arena, Block center) {
+        BLOCK_FACES.stream().map(center::getRelative).forEach(block -> {
+            arena.getPlaced().add(block.getLocation().toVector());
+            block.setType(Material.SLIME_BLOCK);
+        });
     }
 }

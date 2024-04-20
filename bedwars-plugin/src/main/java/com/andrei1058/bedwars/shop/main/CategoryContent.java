@@ -45,7 +45,7 @@ import org.bukkit.inventory.meta.ItemMeta;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.andrei1058.bedwars.BedWars.nms;
+import static com.andrei1058.bedwars.BedWars.*;
 import static com.andrei1058.bedwars.api.language.Language.getMsg;
 
 @SuppressWarnings("WeakerAccess")
@@ -164,11 +164,12 @@ public class CategoryContent implements ICategoryContent {
             }
         }
 
+        Arena a = (Arena) Arena.getArenaByPlayer(player);
         //check money
         int money = calculateMoney(player, ct.getCurrency());
-        if (money < ct.getPrice()) {
+        if (money < getPrice(ct, a)) {
             player.sendMessage(getMsg(player, Messages.SHOP_INSUFFICIENT_MONEY).replace("{currency}", getMsg(player, getCurrencyMsgPath(ct))).
-                    replace("{amount}", String.valueOf(ct.getPrice() - money)));
+                    replace("{amount}", String.valueOf(getPrice(ct, a) - money)));
             Sounds.playSound(ConfigPath.SOUNDS_INSUFF_MONEY, player);
             return;
         }
@@ -182,7 +183,7 @@ public class CategoryContent implements ICategoryContent {
         }
 
         //take money
-        takeMoney(player, ct.getCurrency(), ct.getPrice());
+        takeMoney(player, ct.getCurrency(), getPrice(ct, a));
 
         //upgrade if possible
         shopCache.upgradeCachedItem(this, slot);
@@ -206,6 +207,19 @@ public class CategoryContent implements ICategoryContent {
 
 
         shopCache.setCategoryWeight(father, weight);
+    }
+
+    private int getPrice(IContentTier ct, Arena arena) {
+        int newCost;
+        if(arena.getVillagerCostMultiplier() > 0 && arena.getVillagerCostMultiplier() <= 0.99) {
+            newCost = Math.toIntExact(Math.round(Math.abs(ct.getPrice() - (ct.getPrice() * arena.getVillagerCostMultiplier()))));
+            return (newCost > 0) ? newCost : 1;
+        } else if(arena.getVillagerCostMultiplier() > 1) {
+            newCost = Math.toIntExact(Math.round(ct.getPrice() * arena.getVillagerCostMultiplier()));
+            return newCost;
+        }
+
+        return ct.getPrice();
     }
 
     /**
@@ -250,6 +264,7 @@ public class CategoryContent implements ICategoryContent {
         ItemMeta im = i.getItemMeta();
 
         if (im != null) {
+            Arena arena = (Arena)Arena.getArenaByPlayer(player);
             im = i.getItemMeta().clone();
             boolean canAfford = calculateMoney(player, ct.getCurrency()) >= ct.getPrice();
             PlayerQuickBuyCache qbc = PlayerQuickBuyCache.getQuickBuyCache(player.getUniqueId());
@@ -291,7 +306,10 @@ public class CategoryContent implements ICategoryContent {
                         s = getMsg(player, Messages.SHOP_LORE_QUICK_ADD);
                     }
                 }
-                s = s.replace("{tier}", tier).replace("{color}", color).replace("{cost}", cColor + String.valueOf(ct.getPrice()))
+                s = s.replace("{tier}", tier).replace("{color}", color).replace("{cost}",
+                                cColor + (getPrice(ct, arena) != ct.getPrice() ?
+                                        ChatColor.translateAlternateColorCodes('&', "&8&m" + ct.getPrice() +
+                                                cColor + getPrice(ct, arena)) : String.valueOf(ct.getPrice())))
                         .replace("{currency}", cColor + translatedCurrency).replace("{buy_status}", buyStatus);
                 lore.add(s);
             }

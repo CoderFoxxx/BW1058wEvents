@@ -345,6 +345,15 @@ public class BwSidebar implements ISidebar {
                 }
             }));
 
+            providers.add(new PlaceholderProvider("{eventTime}", () -> {
+                GameState status = this.arena.getStatus();
+                if(status == GameState.playing) {
+                    return getEventTimer();
+                }
+
+                return String.valueOf(plugin.eventConfiguration.getEventDelay());
+            }));
+
             if (null != arena.getStatsHolder()) {
 
                 arena.getStatsHolder().get(player).ifPresent(holder -> {
@@ -466,6 +475,14 @@ public class BwSidebar implements ISidebar {
                 time = (arena.getPlayingTask().getDragonSpawnCountdown()) * 1000L;
                 break;
         }
+        return time == 0 ? "0" : nextEventDateFormat.format(new Date(time));
+    }
+
+    @NotNull
+    private String getEventTimer() {
+        if (!(arena instanceof Arena)) return nextEventDateFormat.format((0L));
+        Arena arena = (Arena) this.arena;
+        long time = arena.getPlayingTask().getEventCountdown() * 1000L;
         return time == 0 ? "0" : nextEventDateFormat.format(new Date(time));
     }
 

@@ -25,6 +25,7 @@ import com.andrei1058.bedwars.api.arena.IArena;
 import com.andrei1058.bedwars.api.arena.shop.IBuyItem;
 import com.andrei1058.bedwars.api.arena.team.TeamEnchant;
 import com.andrei1058.bedwars.api.configuration.ConfigPath;
+import com.andrei1058.bedwars.arena.Arena;
 import com.andrei1058.bedwars.configuration.Sounds;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -43,7 +44,6 @@ import static com.andrei1058.bedwars.BedWars.plugin;
 
 @SuppressWarnings("WeakerAccess")
 public class BuyItem implements IBuyItem {
-
     private ItemStack itemStack;
     private boolean autoEquip = false;
     private boolean permanent = false;
@@ -239,6 +239,11 @@ public class BuyItem implements IBuyItem {
                         im.addEnchant(e.getEnchantment(), e.getAmplifier(), true);
                     }
                 }
+
+                if(!nms.isSword(i) && !nms.isAxe(i) && !nms.isTool(i)) {
+                    i.setAmount(Math.toIntExact(Math.round(i.getAmount() * ((Arena)arena).getSoldItemsMultiplier())));
+                }
+
                 i.setItemMeta(im);
             }
 
@@ -265,7 +270,6 @@ public class BuyItem implements IBuyItem {
         player.getInventory().addItem(i);
         player.updateInventory();
     }
-
 
     /**
      * Get upgrade identifier.

@@ -55,6 +55,8 @@ public class GameRestartingTask implements Runnable, RestartingTask {
         task = Bukkit.getScheduler().runTaskTimer(BedWars.plugin, this, 0, 20L);
         Sounds.playSound("game-end", arena.getPlayers());
         Sounds.playSound("game-end", arena.getSpectators());
+        arena.getEvents().clear();
+        arena.getRunningEvents().clear();
 
         // teleport to alive players
         if (arena.getConfig().getGameOverridableBoolean(ConfigPath.GENERAL_GAME_END_TELEPORT_ELIMINATED)) {
@@ -126,6 +128,9 @@ public class GameRestartingTask implements Runnable, RestartingTask {
             for (Entity e : getArena().getWorld().getEntities()) {
                 if (e.getType() == EntityType.PLAYER) {
                     Player p = (Player) e;
+                    p.setMaxHealth(20);
+                    p.setHealthScale(20);
+                    p.setHealth(20);
                     Misc.moveToLobbyOrKick(p, getArena(), true);
                     if (getArena().isSpectator(p)) getArena().removeSpectator(p, false);
                     if (getArena().isPlayer(p)) getArena().removePlayer(p, false);

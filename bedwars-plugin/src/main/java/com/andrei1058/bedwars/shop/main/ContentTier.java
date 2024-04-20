@@ -34,6 +34,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static com.andrei1058.bedwars.BedWars.nms;
+import static com.andrei1058.bedwars.BedWars.plugin;
 
 @SuppressWarnings("WeakerAccess")
 public class ContentTier implements IContentTier {

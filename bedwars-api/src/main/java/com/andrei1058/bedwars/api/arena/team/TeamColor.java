@@ -234,6 +234,7 @@ public enum TeamColor {
                 name = "Red";
                 break;
             case "LIGHT_GRAY_WOOL":
+            case "GRAY_WOOL":
                 name = "Gray";
                 break;
             case "BLUE_WOOL":
@@ -243,16 +244,55 @@ public enum TeamColor {
                 name = "White";
                 break;
             case "LIGHT_BLUE_WOOL":
+            case "CYAN_WOOL":
                 name = "Aqua";
                 break;
             case "LIME_WOOL":
+            case "GREEN_WOOL":
                 name = "Green";
                 break;
             case "YELLOW_WOOL":
                 name = "Yellow";
                 break;
+        }
+        return name;
+    }
+
+    /**
+     * Get the Russian for material as color name.
+     *
+     * @param material material string.
+     * @return the russian color name for given material. EMPTY if item is not supported.
+     */
+    public static String ruName(@NotNull String material) {
+        String name = "";
+        switch (material.toUpperCase()) {
+            case "PINK_WOOL":
+                name = "Розовые";
+                break;
+            case "RED_WOOL":
+                name = "Красные";
+                break;
+            case "LIGHT_GRAY_WOOL":
             case "GRAY_WOOL":
-                name = "Dark_Gray";
+                name = "Серые";
+                break;
+            case "BLUE_WOOL":
+                name = "Синие";
+                break;
+            case "WHITE_WOOL":
+                name = "Белые";
+                break;
+            case "LIGHT_BLUE_WOOL":
+            case "CYAN_WOOL":
+                name = "Бирюзовые";
+                break;
+            case "LIME_WOOL":
+            case "GREEN_WOOL":
+                name = "Зелёные";
+                break;
+            case "YELLOW_WOOL":
+                name = "Жёлтые";
                 break;
         }
         return name;

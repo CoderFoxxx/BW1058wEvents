@@ -47,6 +47,7 @@ import org.bukkit.Material;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.Sign;
 import org.bukkit.entity.EntityType;
+import org.bukkit.entity.FallingBlock;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.TNTPrimed;
 import org.bukkit.event.EventHandler;
@@ -60,6 +61,8 @@ import org.bukkit.event.hanging.HangingBreakByEntityEvent;
 import org.bukkit.event.player.PlayerBucketEmptyEvent;
 import org.bukkit.event.player.PlayerBucketFillEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.inventory.ItemStack;
+import org.checkerframework.checker.units.qual.A;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
@@ -356,7 +359,7 @@ public class BreakPlace implements Listener {
             }
 
             for (Region r : a.getRegionsList()) {
-                if (r.isInRegion(e.getBlock().getLocation()) && r.isProtected()) {
+                if (r.isInRegion(e.getBlock().getLocation()) && r.isProtected() && !a.isAllowMapBreak()) {
                     e.setCancelled(true);
                     p.sendMessage(getMsg(p, Messages.INTERACT_CANNOT_BREAK_BLOCK));
                     return;
@@ -599,6 +602,19 @@ public class BreakPlace implements Listener {
             if (e.getBlock().getType().toString().equals("FARMLAND") || e.getBlock().getType().toString().equals("SOIL")) {
                 if ((Arena.getArenaByIdentifier(e.getBlock().getWorld().getName()) != null) || (e.getBlock().getWorld().getName().equals(BedWars.getLobbyWorld())))
                     e.setCancelled(true);
+            }
+        }
+    }
+
+    @EventHandler
+    public void fallingBlocks(EntityChangeBlockEvent e) {
+        Arena arena = (Arena) Arena.getArenaByIdentifier(e.getBlock().getLocation().getWorld().getName());
+        if(arena != null) {
+            if(e.getEntity() instanceof FallingBlock || e.getEntityType() == EntityType.FALLING_BLOCK) {
+                FallingBlock block = (FallingBlock) e.getEntity();
+                if(e.getTo() == block.getMaterial()) {
+                    e.setCancelled(true);
+                }
             }
         }
     }

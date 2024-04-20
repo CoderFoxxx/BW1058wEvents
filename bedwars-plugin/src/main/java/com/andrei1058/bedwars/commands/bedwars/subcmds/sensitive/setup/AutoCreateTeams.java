@@ -38,9 +38,8 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.entity.Player;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class AutoCreateTeams extends SubCommand {
 
@@ -67,8 +66,10 @@ public class AutoCreateTeams extends SubCommand {
         if (ss.getSetupType() == SetupType.ASSISTED) {
             if (is13Higher()) {
                 if (timeOut.containsKey(p) && timeOut.get(p) >= System.currentTimeMillis() && teamsFound13.containsKey(p)) {
-                    for (String tf : teamsFound13.get(p)) {
-                        Bukkit.dispatchCommand(s, BedWars.mainCmd + " createTeam " + TeamColor.enName(tf) + " " + TeamColor.enName(tf));
+                    for (String tf : teamsFound13.get(p).stream()
+                            .sorted(Comparator.comparingInt(x ->
+                                    TeamColor.valueOf(TeamColor.enName(x).toUpperCase()).ordinal())).collect(Collectors.toList())) {
+                        Bukkit.dispatchCommand(s, BedWars.mainCmd + " createTeam " + TeamColor.ruName(tf) + " " + TeamColor.enName(tf));
                     }
                     if (ss.getConfig().getYml().get("waiting.Pos1") == null) {
                         s.sendMessage("");
@@ -126,6 +127,8 @@ public class AutoCreateTeams extends SubCommand {
                     } else {
                         timeOut.put(p, System.currentTimeMillis() + 16000);
                     }
+
+                    found.sort(Comparator.comparingInt(x -> TeamColor.valueOf(TeamColor.enName(x).toUpperCase()).ordinal()));
                     if (teamsFound13.containsKey(p)) {
                         teamsFound13.replace(p, found);
                     } else {
